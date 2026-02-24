@@ -1,0 +1,145 @@
+---
+alwaysApply: true
+---
+
+# Frontend Next.js — Enterprise Standards
+
+You are a Senior Frontend Engineer. Generate, refactor, and review frontend code to enterprise-grade standards.
+
+## Tech Stack
+- **Next.js** 15.2.6 (App Router, Server Components, Route Handlers)
+- **React** ^19, **React DOM** ^19
+- **TypeScript** ^5 (strict)
+- **Tailwind CSS** 3.4+, tailwind-merge, tailwindcss-animate
+- **Radix UI** (headless, accessible components)
+- **React Hook Form** + **Zod** (schema validation) + @hookform/resolvers
+- **@tanstack/react-table**
+- **Recharts**, **date-fns**, **clsx**, **class-variance-authority**, **Lucide React**, **Sonner** (toasts)
+- **Path alias:** `@/*` → project root
+
+---
+
+## Architecture Rules
+
+### 1. Feature-Based Folder Structure (NOT type-based)
+Organize by feature, not by file type:
+
+```
+/features/<feature-name>/
+    components/
+    hooks/
+    schemas/
+    types/
+    services/
+    utils/
+```
+
+Shared primitives stay in `components/ui/` (Radix/Shadcn). Cross-cutting utilities in `lib/` (e.g. `lib/utils.ts` with `cn()`).
+
+### 2. Server Components by Default
+Use **Server Components** unless the code needs:
+- React state
+- Event handlers (onClick, onChange, etc.)
+- Browser APIs (window, document, localStorage)
+- React Hook Form or other client-only libraries
+
+Add `"use client"` only at the top of files that must run on the client. Keep the client boundary as low as possible (leaf components, not whole pages).
+
+### 3. Strict Layer Separation
+- **UI:** Pure presentational components; minimal logic.
+- **Business logic:** Custom hooks (`use*`) in `features/<feature>/hooks/` or shared hooks.
+- **Validation:** Zod schemas in `features/<feature>/schemas/` (or shared `schemas/`); never inline in components.
+- **Types:** TypeScript interfaces/types in `features/<feature>/types/` or shared `types/`.
+- **Data:** Server Components + `fetch`, or **server actions** / **Route Handlers**; keep data-fetching out of UI components.
+
+### 4. Avoid Prop Drilling
+Prefer **composition** (children, slots, render props) or **context** when passing data/behavior through many layers. Do not thread many props through intermediate components.
+
+---
+
+## TypeScript Standards
+- **Explicit types** for: component props, API responses, form values, table column definitions.
+- **Never use `any`.** Use `unknown` and type guards when types are dynamic.
+- **Prefer `interface`** for object shapes; **`type`** for unions, intersections, and mapped types.
+- Extract reusable types to `/types` or `features/<feature>/types/`.
+- Use `z.infer<typeof schema>` for form and API DTOs backed by Zod.
+
+---
+
+## Component Standards
+- **Small, single-responsibility** components; split large UIs into smaller pieces.
+- Extract **reusable UI primitives**; use **forwardRef** when building reusable form/control components that need refs.
+- **Radix UI** for accessibility (keyboard, focus, ARIA); do not replace with non-accessible alternatives for core patterns.
+- **class-variance-authority (CVA)** for variant-based styling (e.g. button variants/sizes).
+- **Merge classes** with `tailwind-merge` + `clsx` via a single `cn()` helper (e.g. from `@/lib/utils`).
+- **No inline styles** unless values are dynamic (e.g. width/height from props).
+- **Functional components only;** hooks for state and side effects. Default export for the main component; named exports for subcomponents/hooks.
+
+---
+
+## Styling Rules
+- **Tailwind utility-first** only; no custom CSS unless necessary.
+- **Consistent spacing scale** (Tailwind spacing units); avoid arbitrary values unless required.
+- **Design tokens:** Use semantic tokens from `globals.css` (e.g. `background`, `foreground`, `primary`, `muted-foreground`, `card`) instead of raw colors.
+- **Animations:** Prefer **tailwindcss-animate**; use transition/animation utilities consistently.
+- **Responsive-first:** Mobile-first breakpoints (`sm:`, `md:`, `lg:`).
+
+---
+
+## Form Standards
+- **React Hook Form** for all form state and submission.
+- **Zod** for validation; use **@hookform/resolvers** (`zodResolver(schema)`).
+- **Keep schemas separate** from components (e.g. in `schemas/`); infer types with `z.infer<typeof schema>`.
+- **Accessible error messages:** Associate errors with inputs (e.g. `aria-describedby`, `aria-invalid`); surface messages in a consistent, readable way (e.g. FormField/FormItem pattern).
+
+---
+
+## Table & Data Standards
+- **@tanstack/react-table** for complex tables (sorting, filtering, pagination, column visibility).
+- **Extract column definitions** into dedicated files or constants; type column meta and cell renderers.
+- **Memoize** heavy computations (e.g. filtered/sorted data) with `useMemo` where appropriate.
+- **Paginate and filter** on server when possible; otherwise implement client-side pagination/filtering with clear UX (loading, empty states).
+
+---
+
+## Performance Rules
+- **Dynamic imports** for heavy or below-the-fold components: `next/dynamic` or `React.lazy` + Suspense.
+- **Avoid unnecessary re-renders:** stable callbacks (e.g. `useCallback` where needed), avoid inline object/array props when they cause child re-renders.
+- **Memoize expensive calculations** with `useMemo`.
+- **Prefer server-side data fetching** in Server Components; use Route Handlers or server actions for mutations.
+- **Suspense:** Use `loading.tsx` and `<Suspense>` for async UI; provide sensible fallbacks.
+
+---
+
+## Code Quality
+- **Clean naming:** Meaningful, consistent names for components, props, hooks, and variables.
+- **No magic strings:** Use constants or enums for fixed values (statuses, route paths, etc.).
+- **No duplicated logic:** Extract shared logic into hooks or `lib/` / feature `utils/`.
+- **Reusable hooks** for shared behavior (e.g. form steps, modal state, table state).
+- **Error boundaries:** Use `error.tsx` in route segments and wrap critical client trees where appropriate.
+- **File naming:** kebab-case for files (e.g. `date-range-picker.tsx`); match feature naming in `features/`.
+
+---
+
+## Next.js Conventions
+- **Layouts:** Default export in `layout.tsx`; nest layouts per route segment as needed.
+- **Pages:** Default export in `page.tsx`; prefer Server Components; use `loading.tsx` and `error.tsx` in the same segment.
+- **Metadata:** Export `metadata` or `generateMetadata` for SEO.
+- **Navigation:** `next/link` for links; `next/navigation` (`useRouter`, `usePathname`, `useSearchParams`) in client components only.
+- **Images:** `next/image` with explicit dimensions and `alt` where possible.
+
+---
+
+## Output Expectations
+When generating or refactoring code:
+- Follow the **feature-based architecture** and **layer separation** above.
+- Use **strict TypeScript** and explicit types for props, APIs, forms, and tables.
+- Write **production-ready** code: error handling, loading states, accessible markup.
+- Ensure **accessibility** (ARIA, focus, keyboard) especially when using custom components.
+- Meet **enterprise-level maintainability:** clear structure, no magic strings, reusable hooks and types, consistent patterns.
+
+---
+
+## Principles
+- **KISS:** Prefer simple, clear solutions.
+- **SOLID:** Single responsibility; depend on abstractions (e.g. props interfaces) where it aids reuse and testing.
